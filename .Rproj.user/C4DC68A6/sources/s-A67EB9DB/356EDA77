@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1539465493161.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4125383658",
+    "id" : "356EDA77",
+    "lastKnownWriteTime" : 1539465588,
+    "last_content_update" : 1539465588328,
+    "path" : "G:/Users/Andrew/Documents/GitHub/GuidesForMyself/md-report-example/md-report-example.R",
+    "project_path" : "md-report-example/md-report-example.R",
+    "properties" : {
+        "cursorPosition" : "0,32",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
