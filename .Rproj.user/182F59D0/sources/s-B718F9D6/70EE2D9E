@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1539975737684.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "70EE2D9E",
+    "lastKnownWriteTime" : 1530198675,
+    "last_content_update" : 1530198675,
+    "path" : "~/GitHub/miechv-3/analysis/validation/validation-gpav-3/validation-gpav-3.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "8,25",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
