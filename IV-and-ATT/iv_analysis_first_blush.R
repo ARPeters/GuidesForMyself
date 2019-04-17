@@ -112,3 +112,17 @@ summary(ols_first_mixed)
 ols_second_mixed <- lmer(Y ~ M_hat_mixed + (1|ID), data = ds_L)
 summary(ols_second_mixed)
 
+# Compare correct (lm) to correct (lmer)
+ols_first_correct_lm  <- lm(M ~ X + X*Z                 , data = ds)
+m_hat_correct_lm      <- fitted(ols_first_correct_lm)
+ols_second_correct_lm <- lm(Y ~ X + m_hat_correct_lm + Z, data = ds)
+
+ols_first_correct_lmer  <- lmer(M ~ X + (1|ID)                     , data = ds_L)
+m_hat_correct_lmer      <- fitted(ols_first_correct_lmer)
+ols_second_correct_lmer <- lmer(Y ~ X + m_hat_correct_lmer + (1|ID), data = ds_L)
+
+summary(ols_first_correct_lm)
+summary(ols_first_correct_lmer)
+
+summary(ols_second_correct_lm)
+summary(ols_second_correct_lmer)
