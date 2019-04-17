@@ -1,10 +1,13 @@
 rm(list = ls())
 
+
 # ---- load-packages ------------------------------------------------------------------------------------------------------------------------
 library(ggplot2)
 library(dplyr)
 library(AER)
 library(lavaan)
+library(lme4)
+
 
 # ---- declare-globals ------------------------------------------------------------------------------------------------------------------------
 mySeed <- 7866
@@ -14,6 +17,7 @@ simN   <- 5000
 # ---- simulate-data ------------------------------------------------------------------------------------------------------------------------
 set.seed(mySeed)
 
+# Creating Sample Data
 # X (binary) and Z (continuous), predictors of mediator M
 X         <- rbinom(n=simN,size=1,prob=.5)
 Z         <- rnorm(n=simN)
@@ -27,52 +31,60 @@ Y         <- 0 + 0*X + .5*M + .5*Z + rnorm(n=simN)*sqrt(1)
 
 ds        <- data.frame(list(Y=Y,M=M,X=X,Z=Z))
 
+# Creating fake longitudinal variable with id and frailty term
+id            <- rep(c(1:1000), 5)
+id            <- id[order(id)]
+
+frailzy       <- round(rep(rnorm(n = (simN/5)), 5), 3)
+frailzy       <- frailzy[order(frailzy)]
+
+L_X           <- rbinom(n=simN,size=1,prob=.5)
+
+L_linpred_M   <- -15 + 15*L_X + .5*frailzy*L_X
+L_M           <- rbinom(n=simN,size=1,plogis(L_linpred_M))
+
+L_Y           <- 0 + 0*L_X + 0.5*L_M + 0.5*frailzy + rnorm(n=simN)*sqrt(1)
+
+ds_L          <- data.frame(list(ID = id, Y = L_Y, M=L_M, X=L_X, Z = frailzy))
+
 
 # ---- analyze-data ------------------------------------------------------------------------------------------------------------------------
 # Baseline analysese
-# Modeling M: Almost correctly specified
-summary(glm(M~X,"binomial"))
-summary(glm(M~X + Z,"binomial"))
+summary(glm(M~X          , "binomial" , data = ds_L))  # Modeling M: Almost correctly specified
+summary(glm(M~X + Z      , "binomial" , data = ds_L))  # Modeling M: Almost correctly specified
+summary(glm(M~X + Z + X*Z, "binomial" , data = ds_L))  # Modeling M: Correctly specified
 
-# Modeling M: Correctly specified
-summary(glm(M~X + Z + X*Z,"binomial"))
-
-# Modeling Y: Almost Correctly Specified
-summary(lm(Y~M))
-
-# Modeling Y: Correctly Specified
-summary(lm(Y~X+M+Z))
+summary(lm(Y~M    , data = ds_L)) # Modeling Y: Almost Correctly Specified
+summary(lm(Y~X+M+Z, data = ds_L)) # Modeling Y: Correctly Specified
 
 # cor(ds[,c(4:1)])
 # ggplot(ds,aes(x=M)) + geom_histogram() + facet_grid(~X)
 
 # Linear Model: Almost correct 
-fit.ols <- lm(Y~X+M)
+fit.ols <- lm(Y~X+M, data = ds_L) 
 summary(fit.ols)
-
 
 # Two-Stage Least-Squares regression: Piecemeal
 # First: regress M onto X, get predicted M values
-ols_first <- lm(M ~ X)
+ols_first <- lm(M ~ X, data = ds_L)
 M_hat     <- fitted(ols_first)
 
 summary(ols_first)
 
 # Second: regress Y onto Predicted M values
-ols_second <- lm(Y ~ M_hat)
+ols_second <- lm(Y ~ M_hat, data = ds_L)
 summary(ols_second)
-coef(ols_second)
-
+# coef(ols_second)
 
 # TSLS: Using ivreg() function from AER package
 # In this case: Get's same results
-iv_res <- ivreg(Y ~ M | X)
+iv_res <- ivreg(Y ~ M | X, data = ds_L)
 summary(iv_res)
-
 
 # Using sem() function from lavaan packages
 # Instrumental Variables Approach
-ivMod <- "
+ivMod <- 
+"
 Y ~ intY*1 + b*M   
 M ~ intM*1 + a*X
 
@@ -86,5 +98,17 @@ ab := a*b
 
 "
 
-fit <- sem(ivMod, data=ds,fixed.x = FALSE)
+fit <- sem(ivMod, fixed.x = FALSE, data=ds_L)
 summary(fit)
+
+
+# TSLS: with lmer (which can accomodate id values)
+ols_first_mixed <- lmer(M ~ X + (1|ID), data = ds_L)
+M_hat_mixed     <- fitted(ols_first   , data = ds_L)
+
+summary(ols_first_mixed)
+
+# Second: regress Y onto Predicted M values
+ols_second_mixed <- lmer(Y ~ M_hat_mixed + (1|ID), data = ds_L)
+summary(ols_second_mixed)
+
