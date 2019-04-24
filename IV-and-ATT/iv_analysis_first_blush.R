@@ -112,7 +112,7 @@ summary(ols_first_mixed)
 ols_second_mixed <- lmer(Y ~ M_hat_mixed + (1|ID), data = ds_L)
 summary(ols_second_mixed)
 
-# Compare correct (lm) to correct (lmer)
+# Compare correct (lm) to correctish (lmer)
 ols_first_correct_lm  <- lm(M ~ X + X*Z                 , data = ds)
 m_hat_correct_lm      <- fitted(ols_first_correct_lm)
 ols_second_correct_lm <- lm(Y ~ X + m_hat_correct_lm + Z, data = ds)
@@ -126,3 +126,76 @@ summary(ols_first_correct_lmer)
 
 summary(ols_second_correct_lm)
 summary(ols_second_correct_lmer)
+
+# sem approach: Latent Growth Curve Modeling
+dsw <- 
+  ds_L %>%
+  dplyr::filter(t == 1) %>%
+  dplyr::rename(
+    Y1 = Y,
+    M1 = M,
+    X1 = X
+  ) %>%
+  dplyr::left_join(
+    ds_L %>% dplyr::filter(t == 2) %>%
+      dplyr::select(- "Z" ) %>%
+      dplyr::rename(
+        Y2 = Y,
+        M2 = M,
+        X2 = X
+      ), by = "ID"
+  ) %>%
+  dplyr::left_join(
+    ds_L %>% dplyr::filter(t == 3) %>%
+      dplyr::select(- "Z" ) %>%
+      dplyr::rename(
+        Y3 = Y,
+        M3 = M,
+        X3 = X
+      ), by = "ID"
+  ) %>%
+  dplyr::left_join(
+    ds_L %>% dplyr::filter(t == 4) %>%
+      dplyr::select(- "Z" ) %>%
+      dplyr::rename(
+        Y4 = Y,
+        M4 = M,
+        X4 = X
+      ), by = "ID"
+  ) %>%
+  dplyr::left_join(
+    ds_L %>% dplyr::filter(t == 5) %>%
+      dplyr::select(- "Z" ) %>%
+      dplyr::rename(
+        Y5 = Y,
+        M5 = M,
+        X5 = X
+      ), by = "ID"
+  ) %>%
+  dplyr::select(
+    ID, Z, Y1, Y2, Y3, Y4, Y5, X1, X2, X3, X4, X5, M1, M2, M3, M4, M5
+  )
+
+head(dsw)
+
+model <- '
+# Intercept and slope with fixed coefficients
+  i =~ Y1 + Y2 + Y3 + Y4 + Y5
+  s =~ Y1 + Y2 + Y3 + Y4 + Y5
+
+# 
+  M1 ~ Z + X1
+  M2 ~ Z + X2
+  M3 ~ Z + X3
+  M4 ~ Z + X4
+  M5 ~ Z + X5
+
+  Y1 ~ Z + M1
+  Y2 ~ Z + M2
+  Y3 ~ Z + M3
+  Y4 ~ Z + M4
+  Y5 ~ Z + M5
+'
+
+fit <- growth(model, data = dsw)
+summary(fit)
