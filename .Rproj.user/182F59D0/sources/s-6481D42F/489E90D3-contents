@@ -8,6 +8,7 @@ source("./manipulation/gpav/gpav-3-arch.R")
 
 # ---- load-packages -----------------------------------------------------------
 library(magrittr)
+library(miechv3)
 requireNamespace("tibble")
 requireNamespace("dplyr")
 requireNamespace("DT")
@@ -31,16 +32,16 @@ desired_forms       <- c(
 # palette_summary <- list(cool="#e8f2ec", warmish="#eddbc3", warm="#f0d9a3", hot="#FF9a90", header="#666") #http://colrd.com/image-dna/24382/
 palette_summary <- list(warm="#fde0ef", hot="#f1b6da", header="#555") #http://colrd.com/palette/18841/
 
-# validation_check_rule <- function( check_name, error_message, priority, passing_test ) {
-#   # S3 object to check
-#   l <- list()
-#   class(l)        <- "check"
-#   l$check_name    <- check_name
-#   l$error_message <- error_message
-#   l$priority      <- priority
-#   l$passing_test  <- passing_test
-#   return( l )
-# }
+validation_check_rule <- function( check_name, error_message, priority, passing_test ) {
+  # S3 object to check
+  l <- list()
+  class(l)        <- "check"
+  l$check_name    <- check_name
+  l$error_message <- error_message
+  l$priority      <- priority
+  l$passing_test  <- passing_test
+  return( l )
+}
 
 rule_empty_violation <- function(  ) {
   tibble::tibble(
