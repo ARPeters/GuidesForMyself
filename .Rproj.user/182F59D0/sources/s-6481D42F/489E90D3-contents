@@ -1,0 +1,388 @@
+# Manual corrections to the records are documented in "S:\CCAN\CCANResEval\MIECHV\RedCap\Chomp\SurveyCorrections\GpavCorrections.csv"
+#   Be careful not to move this PHI file to somewhere unsafe.
+
+rm(list=ls(all=TRUE))  #Clear the variables from previous runs.
+
+# ---- load-sources ------------------------------------------------------------
+source("./manipulation/gpav/gpav-3-arch.R")
+
+# ---- load-packages -----------------------------------------------------------
+library(magrittr)
+library(miechv3)
+requireNamespace("tibble")
+requireNamespace("dplyr")
+requireNamespace("DT")
+requireNamespace("readr")
+requireNamespace("testit")
+requireNamespace("config")
+
+
+# ---- declare-globals ---------------------------------------------------------
+path_config         <- "data-public/metadata/gpav/validator-rules-gpav-3.yml"
+config              <- config::get(file=path_config)
+
+# Maleeha, this list of forms may need to grow as you add more checks/variables.
+desired_forms       <- c(
+  "participant_demographics", "child_demographics", "index_child", # required forms
+  "satisfaction_survey", "assessments", "service_utilization_form", "working_alliance",
+  "helping_relationship"
+)
+
+# palette_summary <- list(cool="#8fb59c", warmish="#eddbc3", warm="#e8c571", hot="#d94c3a") #http://colrd.com/image-dna/24382/
+# palette_summary <- list(cool="#e8f2ec", warmish="#eddbc3", warm="#f0d9a3", hot="#FF9a90", header="#666") #http://colrd.com/image-dna/24382/
+palette_summary <- list(warm="#fde0ef", hot="#f1b6da", header="#555") #http://colrd.com/palette/18841/
+
+validation_check_rule <- function( check_name, error_message, priority, passing_test ) {
+  # S3 object to check
+  l <- list()
+  class(l)        <- "check"
+  l$check_name    <- check_name
+  l$error_message <- error_message
+  l$priority      <- priority
+  l$passing_test  <- passing_test
+  return( l )
+}
+
+rule_empty_violation <- function(  ) {
+  tibble::tibble(
+    check_name                = "all_passed",
+    record_id                 = 0L,
+    data_collector            = "",
+    error_message             = "No violations existed in the dataset",
+    priority                  = "",
+    instrument                = ""
+  )
+}
+
+# ---- load-data ---------------------------------------------------------------
+ds_interview <- retrieve_clients_gpav_3(
+  desired_forms                   = desired_forms,
+  filter_only_interview_started   = TRUE   #Retrieve only those who have an interview.
+)
+
+# ---- tweak-data --------------------------------------------------------------
+
+
+# ---- groom-rules -------------------------------------------------------------
+# https://stackoverflow.com/questions/47242697/denormalize-coerce-list-with-nested-vectors-to-data-frame-in-r
+ds_rule <- config$checks %>%
+  purrr::map_df(tibble::as_tibble) %>%
+  # dplyr::rename(check_name=name) %>%
+  dplyr::filter(test_active)
+
+ds_rule_inactive <- config$checks %>%
+  purrr::map_df(tibble::as_tibble) %>%
+  dplyr::filter(!test_active)
+
+testit::assert("The count of distinct rule columns (in the yaml config file) should be 5.", ncol(ds_rule)==6L)
+testit::assert( # dput(colnames(ds_rule))
+  "The rule columns (in the yaml config file) should be correct.",
+  colnames(ds_rule) == c("check_name", "error_message", "priority", "test_active", "instrument", "passing_test")
+)
+# table(ds_rule$check_name)
+# table(ds_rule$error_message)
+# table(ds_rule$passing_test)
+# which(is.na(ds_rule$error_message))
+# OuhscMunge::verify_value_headstart(ds_rule)
+checkmate::assert_character(ds_rule$check_name    , any.missing=F , pattern="^.{4,99}$"  , unique=T)
+checkmate::assert_character(ds_rule$error_message , any.missing=F , pattern="^.{4,255}$" , unique=T)
+checkmate::assert_integer(  ds_rule$priority      , any.missing=F , lower=1, upper=5      )
+checkmate::assert_logical(  ds_rule$test_active   , any.missing=F                         )
+checkmate::assert_character(ds_rule$instrument    , any.missing=F , pattern="^.{5,255}$"  )
+checkmate::assert_character(ds_rule$passing_test  , any.missing=F , pattern="^.{5,}$"     , unique=T)
+
+
+# ---- groom-smells ------------------------------------------------------------
+ds_smell <- config$smells %>%
+  purrr::map_df(tibble::as_tibble) %>%
+  dplyr::filter(smell_active)
+
+ds_smell_inactive <- config$smells %>%
+  purrr::map_df(tibble::as_tibble) %>%
+  dplyr::filter(!smell_active)
+
+
+testit::assert("The count of distinct rule columns (in the yaml config file) should be 9.", ncol(ds_smell)==9L)
+testit::assert( # dput(colnames(ds_smell))
+  "The smell columns (in the yaml config file) should be correct.",
+  colnames(ds_smell) == c("check_name", "description", "priority", "smell_active", "bound_lower", "bound_upper", "bounds_template", "value_template", "equation")
+)
+# table(ds_smell$check_name)
+# OuhscMunge::verify_value_headstart(ds_smell)
+checkmate::assert_character(ds_smell$check_name    , any.missing=F , pattern="^.{4,99}$"  , unique=T)
+checkmate::assert_character(ds_smell$description   , any.missing=F , pattern="^.{4,255}$" , unique=T)
+checkmate::assert_integer(  ds_smell$priority      , any.missing=F , lower=1, upper=5     )
+checkmate::assert_logical(  ds_smell$smell_active  , any.missing=F                        )
+checkmate::assert_numeric(  ds_smell$bound_lower   , any.missing=F , lower=0, upper=1     )
+checkmate::assert_numeric(  ds_smell$bound_upper   , any.missing=F , lower=0, upper=1     )
+checkmate::assert_character(ds_smell$bounds_template , any.missing=F , pattern="^.{2,255}$" )
+checkmate::assert_character(ds_smell$value_template, any.missing=F , pattern="^.{2,255}$" )
+checkmate::assert_character(ds_smell$equation      , any.missing=F , pattern="^.{5,}$"    , unique=T)
+
+# ---- testing-string-to-function -----------------------------------------------
+# https://stackoverflow.com/questions/26164078/r-define-a-function-from-character-string
+# f <- ds_rule$passing_test %>%
+#   purrr::map(~eval(parse(text=.)))
+# g <- ds_rule$passing_test %>%
+#   purrr::map(rlang::as_function(.))
+# g <- rlang::as_function(~function(x) x +1)
+# f[[1]](list(record_id=" "))
+# f <- eval(parse(text=ds_rule$passing_test[1]))
+# f(list(record_id=" "))
+# # [1] FALSE
+# f(list(record_id=""))
+# # [1] TRUE
+
+# ---- execute-rules ----------------------------------------------------------
+cat(
+  glue::glue("{nrow(ds_rule)} rules [have been defined]({config$github_file_prefix}/{path_config}):\n\n"),
+  ds_rule %>%
+    glue::glue_data("1. {check_name};"),
+  sep="\n"
+)
+
+ds_rule_violation_list <- list()
+# for( i in 40 ) {
+for( i in seq_len(nrow(ds_rule)) ) {
+
+  tryCatch({
+    f <- eval(parse(text=ds_rule$passing_test[i]))
+  }, warning = function( e ){
+    stop("Problem parsing the equation for the rule `", ds_rule$check_name[i], "`.\n", e)
+  }, error = function( e ){
+    stop("Problem parsing the equation for the rule `", ds_rule$check_name[i], "`.\n", e)
+  })
+
+  tryCatch({
+   violations <- !f(ds_interview)
+  }, warning = function( e ){
+    stop("Problem executing the equation for rule `", ds_rule$check_name[i], "`.\n", e)
+  }, error = function( e ){
+    stop("Problem executing the equation for rule `", ds_rule$check_name[i], "`.\n", e)
+  })
+
+  # f          <- eval(parse(text=ds_rule$passing_test[i]))
+  index      <- length(ds_rule_violation_list) + 1L
+  # violations <- !f(ds_interview)
+  ds_violation_single <- ds_interview %>%
+    dplyr::filter(violations)
+
+
+  if( nrow(ds_violation_single) > 0L ) {
+    ds_rule_violation_list[[index]] <- ds_violation_single %>%
+      dplyr::select_(
+        "record_id",
+        "data_collector",
+        interview_date            = config$interview_date_name
+      ) %>%
+      dplyr::mutate(
+        check_name                = ds_rule$check_name[i],
+        error_message             = ds_rule$error_message[i],
+        priority                  = ds_rule$priority[i],
+        instrument                = ds_rule$instrument[i]
+      ) %>%
+      dplyr::select(check_name, record_id, data_collector, error_message, priority, instrument, interview_date)
+  }
+  rm(f, index, violations, ds_violation_single)
+}
+
+if( length( ds_rule_violation_list) == 0L ) {
+  ds_rule_violation        <- empty_violation()
+  ds_rule_violation_pretty <- ds_rule_violation
+} else {
+  ds_rule_violation        <- ds_rule_violation_list %>%
+    dplyr::bind_rows() %>%
+    dplyr::arrange(priority, check_name, record_id)
+  ds_rule_violation_pretty <- ds_rule_violation %>%
+    dplyr::mutate(
+      record_id         = sprintf(
+        config$link_specific,
+        config$redcap_version, config$project_id, config$default_arm, .data$record_id, .data$instrument, .data$record_id
+      ),
+      check_name        = gsub("_", " ", .data$check_name),
+      data_collector    = gsub("_", " ", .data$data_collector),
+      instrument        = gsub("_", " ", .data$instrument),
+      check_name        = factor(.data$check_name)
+    )
+  # colnames(ds_rule_violation_pretty) <- gsub("_", " ", colnames(ds_rule_violation_pretty))
+}
+
+message(nrow(ds_rule), " rule checks have been executed.  ", nrow(ds_rule_violation), " violation(s) were found.\n")
+
+rm(ds_rule_violation_list)
+
+# ---- table-rule-detail ----------------------------------------------------------
+ds_rule_violation_pretty %>%
+  DT::datatable(
+    colnames     = gsub("_", " ", colnames(.)),
+    filter       = "top",
+    caption      = paste("Violations at", Sys.time()),
+    escape       = FALSE,
+    options      = list(
+      pageLength = 30,
+      dom = 'tip',
+      initComplete = DT::JS(
+        "function(settings, json) {",
+        "$(this.api().table().header()).css({'background-color': '#555', 'color': '#fff'});",
+        "}"
+      )
+    )
+  )
+# The next line is purely for debugging.  It displays the entire dataset.
+# DT::datatable(ds_interview) # Don't leave this uncommented.
+
+# ---- table-rule-summary ---------------------------------------------------
+# wrap_violation <- function( violation_count, x ) {
+#   dplyr::if_else(
+#     violation_count == 0L,
+#     paste0('<div class="no-violations">', x, "</div>"),
+#     paste0('<div class="violations">', x, "</div>")
+#   )
+# }
+
+ds_rule_summary <- ds_rule_violation %>%
+  dplyr::count(check_name) %>%
+  tidyr::complete(
+    check_name = ds_rule$check_name
+    , fill=list(n=0L)
+  ) %>%
+  dplyr::left_join(ds_rule, by="check_name") %>%
+  dplyr::transmute(
+    check_name            = gsub("_", " ", check_name),
+    priority              , # = wrap_violation(n, priority),
+    error_message         ,
+    n
+  ) %>%
+  dplyr::arrange(priority, check_name)
+
+ds_rule_summary %>%
+  knitr::kable(
+    col.names = c("Rule Name", "Priority", "Error Message", "Violation Count"),
+    align     = "lrlr",
+    escape    = FALSE,
+    format    = "html"
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = c("hover", "condensed", "responsive"), #"striped",
+    full_width        = FALSE,
+    position          = "left"
+  ) %>%
+  kableExtra::row_spec(
+    row         = 0,
+    bold        = T,
+    color       = "white",
+    background  = palette_summary$header
+  ) %>%
+  kableExtra::row_spec(
+    row         = seq_len(nrow(ds_rule_summary)),
+    color       = "#555"
+  ) %>%
+  kableExtra::row_spec(
+    row         = which(ds_rule_summary$n>0 & ds_rule_summary$priority==1L),
+    bold        = T,
+    background  = palette_summary$hot
+  ) %>%
+  kableExtra::row_spec(
+    row         = which(ds_rule_summary$n>0 & ds_rule_summary$priority>1L),
+    bold        = T,
+    background  = palette_summary$warm
+  )
+
+# ---- execute-smells ----------------------------------------------------------
+cat(
+  glue::glue("{nrow(ds_smell)} smells [have been defined]({config$github_file_prefix}/{path_config}):\n\n"),
+  ds_smell %>%
+    glue::glue_data("1. {check_name};"),
+  sep="\n"
+)
+
+# fs <- ds_smell$equation %>%
+#   purrr::invoke_map(function(x) eval(parse(text=x)), .)
+
+ds_smell_result <- ds_smell %>%
+  dplyr::mutate(
+    # f             = purrr::invoke_map(function(x) eval(parse(text=x)), .data$equation),
+    smell_value   = NA_real_,
+    smell_pass    = as.logical(NA_integer_)
+  )
+
+# for( i in 1:14 ) {
+for( i in seq_len(nrow(ds_smell_result)) ) { # i <- 1L
+  tryCatch({
+    f <- eval(parse(text=ds_smell$equation[i]))
+  }, error = function( e ){
+    stop("Problem parsing the equation for smell `", ds_smell$check_name[i], "`.\n", e)
+  })
+
+  tryCatch({
+    ds_smell_result$smell_value[i]   <- f(ds_interview)
+  }, error = function( e ){
+    stop("Problem executing the equation for smell `", ds_smell$check_name[i], "`.\n", e)
+  })
+
+  # ds_smell_result$smell_value[i]   <- f[[i]](ds_interview)
+  ds_smell_result$smell_pass[i]    <- dplyr::between(ds_smell_result$smell_value[i], left=ds_smell_result$bound_lower[i], right=ds_smell_result$bound_upper[i])
+}
+
+message(nrow(ds_smell_result), " smells have been sniffed  ", sum(!ds_smell_result$smell_pass), " violation(s) were found.\n")
+
+# ---- table-smell-summary ---------------------------------------------------
+ds_smell_result_pretty <- ds_smell_result %>%
+  dplyr::transmute(
+    check_name            = gsub("_", " ", check_name),
+    priority,             # = wrap_violation(n, priority),
+    description,
+    boundaries            = sprintf(.data$bounds_template, .data$bound_lower, .data$bound_upper),
+    smell_value           = sprintf(.data$value_template , .data$smell_value),
+    smell_pass
+    # n
+  ) %>%
+  dplyr::arrange(priority, check_name)
+
+ds_smell_result_pretty %>%
+  knitr::kable(
+    col.names = c("Smell Name", "Priority", "Proportion of...", "Legal Boundaries", "Value", "Pass"),
+    align     = "lrllrl",
+    escape    = FALSE,
+    format    = "html"
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = c("hover", "condensed", "responsive"), #"striped",
+    full_width        = FALSE,
+    position          = "left"
+  ) %>%
+  kableExtra::row_spec(
+    row         = 0,
+    bold        = T,
+    color       = "white",
+    background  = palette_summary$header
+  ) %>%
+  kableExtra::row_spec(
+    row         = seq_len(nrow(ds_smell_result_pretty)),
+    color       = "#555"
+  ) %>%
+  kableExtra::row_spec(
+    row         = which(!ds_smell_result_pretty$smell_pass & ds_smell_result_pretty$priority==1L),
+    bold        = T,
+    background  = palette_summary$hot
+  ) %>%
+  kableExtra::row_spec(
+    row         = which(!ds_smell_result_pretty$smell_pass & ds_smell_result_pretty$priority>=2L),
+    bold        = T,
+    background  = palette_summary$warm
+  )
+
+# ---- verify-values -----------------------------------------------------------
+# testit::assert("All IDs should be nonmissing and positive.", all(!is.na(ds_interview$CountyID) & (ds_interview$CountyID>0)))
+
+# ---- specify-columns-to-upload -------------------------------------------------
+
+
+# ---- save-to-disk ------------------------------------------------------------
+message("Saving explicit list of rule violations to `", config$path_output_rule, "`.")
+readr::write_csv(ds_rule_violation, path=config$path_output_rule)
+
+message("Saving summary of smells to `", config$path_output_smell, "`.")
+readr::write_csv(ds_smell_result_pretty, path=config$path_output_smell)
+
+
