@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1556674458970.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "FEC26E03",
+    "lastKnownWriteTime" : 1556677259,
+    "last_content_update" : 1556677259482,
+    "path" : "G:/Users/Andrew/Documents/GitHub/GuidesForMyself/irt-demo.R",
+    "project_path" : "irt-demo.R",
+    "properties" : {
+        "cursorPosition" : "29,0",
+        "scrollLine" : "1",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
