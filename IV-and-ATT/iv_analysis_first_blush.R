@@ -248,3 +248,96 @@ summary(mod.att_L)
 # 
 # fit <- growth(model, data = dsw)
 # summary(fit)
+
+
+# ---- zeligverse-approach ------------------------------------------------------------------------------------------------------------------------
+# Getting sample data from here: http://www.bodowinter.com/tutorial/bw_LME_tutorial2.pdf
+library(quantreg)
+library(lme4)
+library(zeligverse)
+library(dplyr) # load %>% pipe operator
+library(Zelig)
+
+# Getting Zelig multilevel optios imporrted
+# devtools::install_github("IQSS/ZeligMultilevel")
+# install.packages("ZeligMultilevel")
+require(ZeligMultilevel)
+
+
+# Zelig example:
+# load data and estimate model
+data(sanction)
+
+# mil == treatment variable
+
+zqi.out <- zelig(num ~ target + coop + mil, 
+                 model = "poisson", data = sanction, cite = FALSE)
+
+summary(zqi.out)
+
+# find the ATT where the treatement is mil = 1
+z.att <- zqi.out %>%
+  ATT(treatment = "mil", treat = 1) %>% 
+  get_qi(qi = "ATT", xvalue = "TE")
+
+# summarize the results
+hist(z.att, 
+     main = NULL,
+     xlab ="Averege Treatment Effect of mil on the Treated")
+
+
+
+# Fiddling around:
+# dsq <- 
+#   sanction %>% 
+#   dplyr::mutate(
+#     
+#   )
+# head(dsq)
+# 
+# meq <- zelig(num ~ target + coop + mil + (1 | num),
+#              model = "ls.mixed",
+#              data = sanction, cite = FALSE)
+# args(zelig)
+# summary(meq)
+# 
+# 
+# data(voteincome)
+# 
+# z5 <- zlogitmixed$new()
+# z5
+# z5$zelig(vote ~ education + age + female + (1 | state),
+#          data = voteincome)
+# z5
+
+
+# Mixed Effects example from Bodo Winter
+# Getting sample data from here: http://www.bodowinter.com/tutorial/bw_LME_tutorial2.pdf
+
+
+politeness=read.csv("http://www.bodowinter.com/tutorial/politeness_data.csv")
+
+dsq <- 
+  politeness %>% 
+  dplyr::mutate(
+    gender = dplyr::if_else(gender == "M", 1L, 0L),
+    attitude_2 = as.factor(dplyr::if_else(attitude == "pol", 1L, 0L))
+  )
+
+politeness.model = lmer(frequency ~ attitude_2 + gender + (1|subject) + (1|scenario), data=dsq)
+summary(politeness.model)
+
+
+# Importing Bodo Winter example into Zelig to get ATT ( I hope, eventually)
+
+# replicating (hopefully) in Zelig
+zme <- zelig(frequency ~ attitude_2 + (1|subject) + (1|scenario), data=dsq, model = "ls.mixed")
+summary(zme)
+
+
+# find the ATT where the treatement is att (pretend treatment variable) = 1
+z.att <- zme %>%
+  ATT(treatment = "attitude_2", treat = 1)
+
+
+ATT(zme, treatment = "gender", treat = 1)
