@@ -85,6 +85,17 @@ summary(ols_second)
 iv_res <- ivreg(Y ~ M | X, data = ds_L)
 summary(iv_res)
 
+# Recreating in systemfit
+eqFirst   <- M ~ X 
+eqSecond  <- Y ~ M
+
+system <- list(First = eqFirst, Second = eqSecond)
+
+inst <- ~ X
+tsls_test <- systemfit(system, "2SLS", inst = inst, data = ds_L)
+print(tsls_test)
+
+
 # Using sem() function from lavaan packages
 # Instrumental Variables Approach
 # ivMod <- 
@@ -386,8 +397,52 @@ dsq <-
     attitude_2 = as.factor(dplyr::if_else(attitude == "pol", 1L, 0L))
   )
 
-politeness.model = lmer(frequency ~ attitude_2 + gender + (1|subject) + (1|scenario), data=dsq)
+# politeness.model = lmer(frequency ~ attitude_2 + gender + (1|subject) + (1|scenario), data=dsq)
+politeness.model = lmer(frequency ~ attitude_2 + gender + (1|subject), data=dsq)
 summary(politeness.model)
+
+
+
+iv_res <- ivreg(Y ~ M | X, data = ds_L)
+summary(iv_res)
+
+
+
+eqFirst  <- M ~ X
+eqSecond <- Y ~ M
+
+system    <- list(First = eqFirst, Second = eqSecond)
+inst      <- ~ X
+test_2sls <- systemfit(system, "2SLS", inst = inst, data = ds_L)
+test_2sls
+
+eqFirst  <- M ~ X
+eqSecond <- Y ~ M + (1 | ID)
+
+system    <- list(First = eqFirst, Second = eqSecond)
+inst      <- ~ X
+test_2sls <- systemfit(system, "2SLS", inst = inst, data = ds_L)
+test_2sls
+
+
+
+data("KleinI")
+View(head(KleinI, 40))
+data( "Kmenta" )
+View(head(Kmenta, 40))
+eqDemand <- consump ~ price + income
+eqSupply <- consump ~ price + farmPrice + trend
+system <- list( demand = eqDemand, supply = eqSupply )
+
+## 2SLS estimation
+inst <- ~ income + farmPrice + trend
+fit2sls <- systemfit( system, "2SLS", inst = inst, data = Kmenta )
+print( fit2sls )
+
+
+
+
+
 
 
 # Importing Bodo Winter example into Zelig to get ATT ( I hope, eventually)
@@ -403,3 +458,57 @@ z.att <- zme %>%
 
 
 ATT(zme, treatment = "gender", treat = 1)
+
+
+# https://stats.stackexchange.com/questions/159997/2sls-for-panel-data-in-r
+
+
+require(plm)
+## replicates Baltagi (2005, 2013), table 7.4
+## preferred way with plm()
+data("Wages", package = "plm")
+
+ht <- plm(lwage ~ wks + south + smsa + married + exp + I(exp ^ 2) +
+            bluecol + ind + union + sex + black + ed |
+            bluecol + south + smsa + ind + sex + black |
+            wks + married + union + exp + I(exp ^ 2),
+          data = Wages, index = 595,
+          random.method = "ht", model = "random", inst.method = "baltagi")
+summary(ht)
+View(head(Wages, 40))
+# deprecated way with pht() for HT
+ht <- pht(lwage ~ wks + south + smsa + married + exp + I(exp^2) +
+ bluecol + ind + union + sex + black + ed |
+ sex + black + bluecol + south + smsa + ind,
+ data = Wages, model = "ht", index = 595)
+summary(ht)
+
+# systemfit
+library(systemfit)
+
+
+data( "Kmenta" )
+View(head(Kmenta, 40))
+eqDemand <- consump ~ price + income
+eqSupply <- consump ~ price + farmPrice + trend
+system <- list( demand = eqDemand, supply = eqSupply )
+
+## 2SLS estimation
+inst <- ~ income + farmPrice + trend
+fit2sls <- systemfit( system, "2SLS", inst = inst, data = Kmenta )
+print( fit2sls )
+
+
+data("Grunfeld", package = "plm")
+View(head(Grunfeld, 40))
+
+
+eqFirst  <- value ~ firm
+eqSecond <- inv ~ value + (1 | year)
+system   <- list(First = eqFirst, Second = eqSecond)
+inst     <- ~ firm 
+fit_test <- systemfit(system, "2SLS", inst = inst, data = Grunfeld)
+fit_test
+
+iv_res <- ivreg(inv ~ value | firm, data = Grunfeld)
+summary(iv_res)
