@@ -67,13 +67,17 @@ summary(fit.ols)
 # Two-Stage Least-Squares regression: Piecemeal
 # First: regress M onto X, get predicted M values
 ols_first <- lm(M ~ X, data = ds_L)
-M_hat     <- fitted(ols_first)
-
+M_hat     <- round(fitted(ols_first), 4)
+table(M_hat)
+round(coef(ols_first), 3)
+table(X = ds_L$X, M = ds_L$M, useNA = "ifany")
 summary(ols_first)
 
 # Second: regress Y onto Predicted M values
 ols_second <- lm(Y ~ M_hat, data = ds_L)
 summary(ols_second)
+
+
 # coef(ols_second)
 
 # TSLS: Using ivreg() function from AER package
@@ -83,34 +87,92 @@ summary(iv_res)
 
 # Using sem() function from lavaan packages
 # Instrumental Variables Approach
-ivMod <- 
-  "
-Y ~ intY*1 + b*M   
-M ~ intM*1 + a*X
-
-#variances and residuals
-Y ~~ start(.9)*Y
-M ~~ start(1.25)*M
-Y ~~ M
-
-#Indirect effect
-ab := a*b
-
-"
-
-fit <- sem(ivMod, fixed.x = FALSE, data=ds_L)
-summary(fit)
+# ivMod <- 
+# 
+# "
+# Y ~ intY*1 + b*M   
+# M ~ intM*1 + a*X
+# 
+# #variances and residuals
+# Y ~~ start(.9)*Y
+# M ~~ start(1.25)*M
+# Y ~~ M
+# 
+# #Indirect effect
+# ab := a*b
+# 
+# "
+# 
+# fit <- sem(ivMod, fixed.x = FALSE, data=ds_L)
+# summary(fit)
 
 
 # TSLS: with lmer (which can accomodate id values)
 ols_first_mixed <- lmer(M ~ X + (1|ID), data = ds_L)
-M_hat_mixed     <- fitted(ols_first   , data = ds_L)
+M_hat_mixed     <- round(fitted(ols_first   , data = ds_L), 3)
 
+head(round(fitted(ols_first_mixed), 3))
+head(ds_L)
+head(M_hat_mixed, 15)
+table(round(M_hat_mixed, 3))
+View(as.data.frame(ranef(ols_first_mixed), 15))
 summary(ols_first_mixed)
+round(coef(ols_first_mixed))
 
+vec <-c(1:5)
+rep(vec, each = 5)
+head(rep(ranef(ols_first_mixed, each = 5)))
+as.data.frame(ranef(ols_first_mixed))
+
+ds_ranef <- as.data.frame(ranef(ols_first_mixed)) %>% tibble::as_tibble()
+
+ds_ranef <-
+  ranef(ols_first_mixed) %>% 
+  tibble::as_tibble() %>% 
+  dplyr::mutate(
+    grouping_var  = as.integer(as.character(grp)),
+    id_effect_var = condval,
+  ) %>% 
+  dplyr::select(grouping_var, id_effect_var)
+
+# table(table(paste(ds_ranef$grp, ds_ranef$grouping_var, "")))
+# table(unique(paste(ds_ranef$grp, ds_ranef$grouping_var, "")))
+# 
+# 
+# table(grp = ds_ranef$grp, gpr_new = ds_ranef$grouping_var)
+# str(ds_ranef)
+# View(head(ds_ranef, 40))
+# head(ds_ranef$grp)
+# str(ds_ranef)
+
+
+
+ds_L2 <-
+  ds_L %>% 
+  dplyr::left_join(
+    ds_ranef,
+    by = c("ID" = "grouping_var")
+  ) %>% 
+  dplyr::mutate(
+    M_hat_mixed_b = M_hat_mixed,
+    M_hat_mixed_with_random_id = M_hat_mixed_b + id_effect_var
+  )
+
+View(head(ds_L2, 40))
 # Second: regress Y onto Predicted M values
-ols_second_mixed <- lmer(Y ~ M_hat_mixed + (1|ID), data = ds_L)
+ols_second_mixed <- lmer(Y ~ M_hat_mixed_b + (1|ID), data = ds_L2)
 summary(ols_second_mixed)
+
+
+# Second step 2: regress Y onto predicted M values plus the random individual effect
+ols_second_mixed_b <- lmer(Y ~ M_hat_mixed_with_random_id + (1|ID), data = ds_L2)
+summary(ols_second_mixed_b)
+
+
+# If we just added the mixed effects into second stage
+ols_second_mixed_c <- lmer(Y ~ M_hat + (1|ID), data = ds_L2)
+summary(ols_second_mixed_b)
+
 
 # Compare correct (lm) to correctish (lmer)
 ols_first_correct_lm  <- lm(M ~ X + X*Z                 , data = ds)
