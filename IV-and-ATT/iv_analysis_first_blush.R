@@ -165,6 +165,20 @@ summary(ols_second_mixed)
 
 # ----
 
+
+ds_test <-
+  ds_L %>% 
+  dplyr::mutate(
+    time = rep(c(1:5), 1000)
+  ) %>% 
+  dplyr::select(ID, time, dplyr::everything())
+View(head(ds_test, 40))
+
+test <- plm(formula = Y ~ M + X | + X | X, data = ds_test, model = "random")
+test <- plm(formula = Y ~ M + X | + X | X, data = ds_test, model = "random", random.method = "ht")
+
+
+
 # Second step 2: regress Y onto predicted M values plus the random individual effect
 ols_second_mixed_b <- lmer(Y ~ M_hat_mixed_with_s1id + (1|ID), data = ds_L2)
 summary(ols_second_mixed_b)
