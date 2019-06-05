@@ -1703,10 +1703,95 @@ Multiple R-Squared: 0.06187 Adjusted R-Squared: 0.061682 </code></pre>
 </ul>
 </div>
 </div>
+<div id="tsls-with-mixed-effects" class="section level2">
+<h2><span class="header-section-number">1.2</span> TSLS with Mixed Effects</h2>
+<p>My immediate guess as to how to get a TOT estimate with longitudinal data is to peform TSLS but add a random effect of individual to both stages. This means using lmer() instead of lme(). It gets me an answer.</p>
+<pre class="r"><code># TSLS: with lmer (which can accomodate id values)
+ols_first_mixed &lt;- lmer(M ~ X + (1|ID), data = ds_L)
+M_hat_mixed     &lt;- round(fitted(ols_first   , data = ds_L), 3)
+summary(ols_first_mixed)</code></pre>
+<pre><code>Linear mixed model fit by REML [&#39;lmerMod&#39;]
+Formula: M ~ X + (1 | ID)
+   Data: ds_L
+
+REML criterion at convergence: 3854.9
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-1.55184 -1.27740  0.00038  1.26531  1.54013 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ ID       (Intercept) 0.003902 0.06247 
+ Residual             0.122549 0.35007 
+Number of obs: 5000, groups:  ID, 1000
+
+Fixed effects:
+              Estimate Std. Error t value
+(Intercept) -2.660e-06  7.363e-03    0.00
+X            5.024e-01  1.005e-02   50.01
+
+Correlation of Fixed Effects:
+  (Intr)
+X -0.690</code></pre>
+<pre class="r"><code>ds_ranef &lt;-
+  ranef(ols_first_mixed) %&gt;%
+  tibble::as_tibble() %&gt;%
+  dplyr::mutate(
+    grouping_var  = as.integer(as.character(grp)),
+    id_effect_var = condval,
+  ) %&gt;%
+  dplyr::select(grouping_var, id_effect_var)
+
+
+ds_L2 &lt;-
+  ds_L %&gt;% 
+  dplyr::left_join(
+    ds_ranef,
+    by = c(&quot;ID&quot; = &quot;grouping_var&quot;)
+  ) %&gt;% 
+  dplyr::mutate(
+    M_hat_mixed_without_s1id = M_hat_mixed,
+    M_hat_mixed_with_s1id = M_hat_mixed_without_s1id + id_effect_var
+  )
+
+# Second: regress Y onto Predicted M values
+ols_second_mixed &lt;- lmer(Y ~ M_hat_mixed_without_s1id + (1|ID), data = ds_L2)
+summary(ols_second_mixed)</code></pre>
+<pre><code>Linear mixed model fit by REML [&#39;lmerMod&#39;]
+Formula: Y ~ M_hat_mixed_without_s1id + (1 | ID)
+   Data: ds_L2
+
+REML criterion at convergence: 15316.7
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.8687 -0.6420  0.0081  0.6385  3.8140 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ ID       (Intercept) 0.2894   0.538   
+ Residual             1.0522   1.026   
+Number of obs: 5000, groups:  ID, 1000
+
+Fixed effects:
+                          Estimate Std. Error t value
+(Intercept)              -0.005686   0.027283  -0.208
+M_hat_mixed_without_s1id  0.549096   0.061602   8.914
+
+Correlation of Fixed Effects:
+            (Intr)
+M_ht_mxd__1 -0.573</code></pre>
+<p>But I have some troubling questions:</p>
+<ul>
+<li>If this is the right answer, why can’t I find any sources doing something similar?</li>
+<li>Do I add the the random id effect to the second stage lmer model or not?</li>
+</ul>
+</div>
 <div id="sources" class="section level2">
-<h2><span class="header-section-number">1.2</span> Sources</h2>
+<h2><span class="header-section-number">1.3</span> Sources</h2>
 <div id="sources-1" class="section level3">
-<h3><span class="header-section-number">1.2.1</span> Sources</h3>
+<h3><span class="header-section-number">1.3.1</span> Sources</h3>
 <ul>
 <li><a href="https://www.hhs.gov/ash/oah/sites/default/files/estimating-program-effects-on-program-participants-brief.pdf">Estimating Program Effects on Program Participans</a></li>
 <li><a href="https://cran.r-project.org/web/packages/plm/plm.pdf">PLM: A package for linear models for panel data</a></li>
