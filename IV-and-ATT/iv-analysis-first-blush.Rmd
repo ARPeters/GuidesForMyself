@@ -1,0 +1,103 @@
+---
+title: "Treatment on the Treated and Longitudinal Data"
+author: "Andrew Peters"
+date: "October 19, 2018"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r, echo=F, message=F}
+library(knitr)
+```
+
+<!-- Set the report-wide options, and point to the external code file. -->
+```{r set-options, echo=F}
+report_render_start_time <- Sys.time()
+opts_chunk$set(
+  results    = 'show',
+  comment    = NA,
+  tidy       = FALSE,
+  fig.width  = 6.5,
+  fig.height = 4,
+  fig.path   = 'figure-png/'
+)
+
+echo_chunks <- FALSE
+options(width=100) #So the output is 25% wider than the default.
+
+#This allows knitr to call chunks tagged in the underlying *.R file.
+# read_chunk("./IV-and-ATT/iv_analysis_first_blush.R")
+read_chunk("G:/Users/Andrew/Documents/GitHub/GuidesForMyself/IV-and-ATT/iv_analysis_first_blush.R")
+
+
+```
+
+<!-- Load 'sourced' R files.  Suppress the output when loading sources. -->
+```{r load-sources, echo=echo_chunks, message=FALSE}
+```
+
+<!-- Load R packages. Suppress the output when loading packages. -->
+```{r load-packages, echo=echo_chunks, message=FALSE}
+```
+
+<!-- Load any global functions and variables declared in the R file.  Suppress the output. -->
+```{r declare-globals, echo=echo_chunks, results='show', message=FALSE}
+```
+
+<!-- Tweak the datasets.   -->
+```{r simulate-data, echo=echo_chunks, results='show', message=TRUE}
+```
+
+TOT and Longitudinal Data {.tabset .tabset-fade}
+=============================
+
+
+TOT
+-----------------------------
+### Two-Stage Least Squares Regression (TSLS)
+
+TOT can take multiple forms depending upon whether you have records of which specific individuals are *assigned* to a specific treatment condition AND which individuals actually *received* their respective treatments.  
+
+In the example below, and in our OSDH Data, we do, so we favor the instrumental variable analysis. This process consists of two parts:
+
+First, fitting a linear model regressing *Treatment Received* (M) onto *Treatment Assigned* (X). In other sources, *Received* is also referred to as the endogenous variable, and *Assigned* would be referred to as the Instrument or Instrumental variable. 
+
+Second, regress the outcome of interest (Y) onto the predicted *Received* (M_hat) values from the first stage.
+
+```{r TSLS, echo=TRUE, results='show', message=TRUE}
+```
+
+
+### ivreg()
+
+The same process can be done in one line using the ivreg() function from the AER package.
+```{r ivreg, echo=echo_chunks, results='show', message=TRUE}
+```
+
+### systemfit
+
+Hello.
+```{r systemfit, echo=echo_chunks, results='show', message=TRUE}
+```
+
+
+###  Reporting TOT
+What to include in report of TOT (specifically IV) analysis, according to [This Source](https://www.hhs.gov/ash/oah/sites/default/files/estimating-program-effects-on-program-participants-brief.pdf): 
+
+  + Proportion assigned to each treatment group, and proportion of each treatment group who received their assigned treatment.
+  + Evidence that the two groups are roughly equivalent. 
+  + If using IV methods:
+    + F-statistic showing (hopefully) that *Assigned* significantly predicts *Received*
+    + Standard error of LATE estimate, and p-value of the impact estimate
+
+Sources
+-----------------------------
+### Sources
+  
+  + [Estimating Program Effects on Program Participans](https://www.hhs.gov/ash/oah/sites/default/files/estimating-program-effects-on-program-participants-brief.pdf)
+  + [PLM: A package for linear models for panel data](https://cran.r-project.org/web/packages/plm/plm.pdf)
+  + [Relevent Stack Exchange Question](https://stats.stackexchange.com/questions/159997/2sls-for-panel-data-in-r)
+

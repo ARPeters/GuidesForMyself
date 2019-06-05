@@ -8,6 +8,9 @@ library(AER)
 library(lavaan)
 library(lme4)
 library(wfe)
+library(plm)
+library(systemfit)
+
 
 # ---- declare-globals ------------------------------------------------------------------------------------------------------------------------
 mySeed <- 7866
@@ -48,7 +51,9 @@ L_Y           <- 0 + 0*L_X + 0.5*L_M + 0.5*frailzy + rnorm(n=simN)*sqrt(1)
 ds_L          <- data.frame(list(ID = id, Y = L_Y, M=L_M, X=L_X, Z = frailzy))
 
 
-# ---- analyze-data ------------------------------------------------------------------------------------------------------------------------
+# ----
+
+# Fiddling around with simulated data
 # Baseline analysese
 summary(glm(M~X          , "binomial" , data = ds_L))  # Modeling M: Almost correctly specified
 summary(glm(M~X + Z      , "binomial" , data = ds_L))  # Modeling M: Almost correctly specified
@@ -60,30 +65,36 @@ summary(lm(Y~X+M+Z, data = ds_L)) # Modeling Y: Correctly Specified
 # cor(ds[,c(4:1)])
 # ggplot(ds,aes(x=M)) + geom_histogram() + facet_grid(~X)
 
+
 # Linear Model: Almost correct 
 fit.ols <- lm(Y~X+M, data = ds_L) 
-summary(fit.ols)
+# summary(fit.ols)
 
+
+# ---- TSLS ------------------------------------------------------------------------------------------------------------------------
 # Two-Stage Least-Squares regression: Piecemeal
 # First: regress M onto X, get predicted M values
 ols_first <- lm(M ~ X, data = ds_L)
-M_hat     <- round(fitted(ols_first), 4)
-table(M_hat)
-round(coef(ols_first), 3)
-table(X = ds_L$X, M = ds_L$M, useNA = "ifany")
+M_hat     <- fitted(ols_first)
 summary(ols_first)
 
 # Second: regress Y onto Predicted M values
 ols_second <- lm(Y ~ M_hat, data = ds_L)
 summary(ols_second)
 
-
 # coef(ols_second)
 
+
+# ---- ivreg ------------------------------------------------------------------------------------------------------------------------
 # TSLS: Using ivreg() function from AER package
-# In this case: Get's same results
+# In this case: Gets same results
 iv_res <- ivreg(Y ~ M | X, data = ds_L)
 summary(iv_res)
+
+
+# ---- systemfit ------------------------------------------------------------------------------------------------------------------------
+# TSLS: Using systemfit package
+# In this case: Gets same results
 
 # Recreating in systemfit
 eqFirst   <- M ~ X 
@@ -93,8 +104,11 @@ system <- list(First = eqFirst, Second = eqSecond)
 
 inst <- ~ X
 tsls_test <- systemfit(system, "2SLS", inst = inst, data = ds_L)
-print(tsls_test)
 
+summary(tsls_test)
+
+
+# ----
 
 # Using sem() function from lavaan packages
 # Instrumental Variables Approach
