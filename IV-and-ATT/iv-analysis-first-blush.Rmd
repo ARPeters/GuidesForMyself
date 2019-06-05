@@ -100,4 +100,13 @@ Sources
   + [Estimating Program Effects on Program Participans](https://www.hhs.gov/ash/oah/sites/default/files/estimating-program-effects-on-program-participants-brief.pdf)
   + [PLM: A package for linear models for panel data](https://cran.r-project.org/web/packages/plm/plm.pdf)
   + [Relevent Stack Exchange Question](https://stats.stackexchange.com/questions/159997/2sls-for-panel-data-in-r)
+  + [Fixed Effects and Differences-in-Differences](https://static1.squarespace.com/static/59371c8ad1758ebe90723e40/t/5b085292758d46948e575dc3/1527272083029/strumpf+2017-DD+and+FE.pdf)
+  + [PLM](https://cran.r-project.org/web/packages/plm/plm.pdf)
+  
+  
+  
+  
+<!--  + [NCSS Intro to 2SLS](https://ncss-wpengine.netdna-ssl.com/wp-content/themes/ncss/pdf/Procedures/NCSS/Two-Stage_Least_Squares.pdf) -->
+
+
 
