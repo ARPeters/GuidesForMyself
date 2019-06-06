@@ -9,8 +9,12 @@ output:
     number_sections: true
 ---
 
+<!--  Set the working directory to the repository's base directory; this assumes the report is nested inside of one directory.-->
 ```{r, echo=F, message=F}
+# cat("Working directory: ", getwd())
 library(knitr)
+library(flexdashboard)
+opts_knit$set(root.dir='../')  #Don't combine this call with any other chunk -especially one that uses file paths.
 ```
 
 <!-- Set the report-wide options, and point to the external code file. -->
@@ -30,7 +34,7 @@ options(width=100) #So the output is 25% wider than the default.
 
 #This allows knitr to call chunks tagged in the underlying *.R file.
 # read_chunk("./IV-and-ATT/iv_analysis_first_blush.R")
-read_chunk("G:/Users/Andrew/Documents/GitHub/GuidesForMyself/IV-and-ATT/iv_analysis_first_blush.R")
+read_chunk("./IV-and-ATT/iv_analysis_first_blush.R")
 
 
 ```
@@ -124,7 +128,6 @@ Sources
   + [PLM guide](https://cran.r-project.org/web/packages/plm/vignettes/plmPackage.html)
   + [systemfit guide - is not good enough](https://cran.r-project.org/web/packages/systemfit/vignettes/systemfit.pdf)
   + [wfe package](https://cran.r-project.org/web/packages/wfe/wfe.pdf)
-
 
 <!--  + [NCSS Intro to 2SLS](https://ncss-wpengine.netdna-ssl.com/wp-content/themes/ncss/pdf/Procedures/NCSS/Two-Stage_Least_Squares.pdf) -->
 
