@@ -55,7 +55,7 @@ TOT and Longitudinal Data {.tabset .tabset-fade}
 =============================
 
 
-TOT
+TOT - no mixed effects
 -----------------------------
 ### Two-Stage Least Squares Regression (TSLS)
 
@@ -78,8 +78,7 @@ The same process can be done in one line using the ivreg() function from the AER
 ```
 
 ### systemfit
-
-Hello.
+The Same results from systemfit()
 ```{r systemfit, echo=echo_chunks, results='show', message=TRUE}
 ```
 
@@ -88,12 +87,12 @@ Hello.
 What to include in report of TOT (specifically IV) analysis, according to [This Source](https://www.hhs.gov/ash/oah/sites/default/files/estimating-program-effects-on-program-participants-brief.pdf): 
 
   + Proportion assigned to each treatment group, and proportion of each treatment group who received their assigned treatment.
-  + Evidence that the two groups are roughly equivalent. 
+  + Evidence that the two groups are roughly equivalent.
   + If using IV methods:
     + F-statistic showing (hopefully) that *Assigned* significantly predicts *Received*
     + Standard error of LATE estimate, and p-value of the impact estimate
 
-TSLS with Mixed Effects
+TSLS with lmer?
 -----------------------------
 My immediate guess as to how to get a TOT estimate with longitudinal data is to peform TSLS but add a random effect of individual to both stages. This means using lmer() instead of lme(). It gets me an answer. 
 
@@ -106,6 +105,13 @@ But I have some troubling questions:
   + Do I add the the random id effect to the second stage lmer model or not?
   
 
+TSLS with wfe()
+-----------------------------
+I get...something of an answer using the wfe() package. 
+```{r wfe, echo=TRUE, results='show', message=TRUE}
+```
+
+
 Sources
 -----------------------------
 ### Sources
@@ -116,6 +122,8 @@ Sources
   + [Fixed Effects and Differences-in-Differences](https://static1.squarespace.com/static/59371c8ad1758ebe90723e40/t/5b085292758d46948e575dc3/1527272083029/strumpf+2017-DD+and+FE.pdf)
   + [PLM](https://cran.r-project.org/web/packages/plm/plm.pdf)
   + [PLM guide](https://cran.r-project.org/web/packages/plm/vignettes/plmPackage.html)
+  + [systemfit guide - is not good enough](https://cran.r-project.org/web/packages/systemfit/vignettes/systemfit.pdf)
+  + [wfe package](https://cran.r-project.org/web/packages/wfe/wfe.pdf)
 
 
 <!--  + [NCSS Intro to 2SLS](https://ncss-wpengine.netdna-ssl.com/wp-content/themes/ncss/pdf/Procedures/NCSS/Two-Stage_Least_Squares.pdf) -->

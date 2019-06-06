@@ -10,6 +10,10 @@ library(lme4)
 library(wfe)
 library(plm)
 library(systemfit)
+library(quantreg)
+library(zeligverse)
+library(Zelig)
+# library(ZeligMultilevel)
 
 
 # ---- declare-globals ------------------------------------------------------------------------------------------------------------------------
@@ -162,21 +166,7 @@ ds_L2 <-
 # Second: regress Y onto Predicted M values
 ols_second_mixed <- lmer(Y ~ M_hat_mixed_without_s1id + (1|ID), data = ds_L2)
 summary(ols_second_mixed)
-
 # ----
-
-
-ds_test <-
-  ds_L %>% 
-  dplyr::mutate(
-    time = rep(c(1:5), 1000)
-  ) %>% 
-  dplyr::select(ID, time, dplyr::everything())
-View(head(ds_test, 40))
-
-test <- plm(formula = Y ~ M + X | + X | X, data = ds_test, model = "random")
-test <- plm(formula = Y ~ M + X | + X | X, data = ds_test, model = "random", random.method = "ht")
-
 
 
 # Second step 2: regress Y onto predicted M values plus the random individual effect
@@ -205,7 +195,12 @@ summary(ols_second_correct_lm)
 summary(ols_second_correct_lmer)
 
 
-# wfe package
+# ---- wfe ------------------------------------------------------------------------------------------------------------------------
+mod.att_L <- wfe(Y ~ M + X, data = ds_L, treat = "X", unit.index = "ID", method = "unit", qoi = "att", estimator = "did")
+summary(mod.att_L)
+
+
+# ----
 
 ### NOTE: this example illustrates the use of wfe function with randomly
 ### generated panel data with arbitrary number of units and time.
@@ -250,9 +245,6 @@ mod.att <- wfe(y~ tr+x1+x2, data = Data.str, treat = "tr",
 ## summarize the results
 summary(mod.att)
 
-# Trying it with ds_L
-mod.att_L <- wfe(Y ~ M + X + Z, data = ds_L, treat = "M", unit.index = "ID", method = "unit", qoi = "att")
-summary(mod.att_L)
 # sem approach: Latent Growth Curve Modeling
 # dsw <- 
 #   ds_L %>%
