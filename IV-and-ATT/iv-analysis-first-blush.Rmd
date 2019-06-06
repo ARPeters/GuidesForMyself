@@ -126,8 +126,15 @@ Sources
   + [Fixed Effects and Differences-in-Differences](https://static1.squarespace.com/static/59371c8ad1758ebe90723e40/t/5b085292758d46948e575dc3/1527272083029/strumpf+2017-DD+and+FE.pdf)
   + [PLM](https://cran.r-project.org/web/packages/plm/plm.pdf)
   + [PLM guide](https://cran.r-project.org/web/packages/plm/vignettes/plmPackage.html)
+  + [PLM guide, revenge of](https://mran.microsoft.com/snapshot/2018-04-06/web/packages/plm/vignettes/plm.pdf)
   + [systemfit guide - is not good enough](https://cran.r-project.org/web/packages/systemfit/vignettes/systemfit.pdf)
   + [wfe package](https://cran.r-project.org/web/packages/wfe/wfe.pdf)
+  + [Panel Data question on research gate](https://www.researchgate.net/post/Do_you_have_any_experience_using_fixed_effects_as_instrumental_variables_with_longitudinal_panel_data)
+  + [wfe package](https://www.researchgate.net/post/Do_you_have_any_experience_using_fixed_effects_as_instrumental_variables_with_longitudinal_panel_data)
+  + [Causal claims review](https://www.sciencedirect.com/science/article/pii/S1048984310001475)
+  + [Paper that may have relvent methods](https://www.sciencedirect.com/science/article/pii/S1048984314000290#bb0025)
+
+
 
 <!--  + [NCSS Intro to 2SLS](https://ncss-wpengine.netdna-ssl.com/wp-content/themes/ncss/pdf/Procedures/NCSS/Two-Stage_Least_Squares.pdf) -->
 
