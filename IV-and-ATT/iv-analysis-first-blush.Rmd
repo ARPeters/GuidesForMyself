@@ -133,7 +133,8 @@ Sources
   + [wfe package](https://www.researchgate.net/post/Do_you_have_any_experience_using_fixed_effects_as_instrumental_variables_with_longitudinal_panel_data)
   + [Causal claims review](https://www.sciencedirect.com/science/article/pii/S1048984310001475)
   + [Paper that may have relvent methods](https://www.sciencedirect.com/science/article/pii/S1048984314000290#bb0025)
-
+  + [Latent curve model video part 1](https://www.youtube.com/watch?v=o8fVxrupRR4)
+  + [Latent curve model video part 2](https://www.youtube.com/watch?v=jCFIWJVj9z4)
 
 
 <!--  + [NCSS Intro to 2SLS](https://ncss-wpengine.netdna-ssl.com/wp-content/themes/ncss/pdf/Procedures/NCSS/Two-Stage_Least_Squares.pdf) -->

@@ -117,8 +117,8 @@ summary(tsls_test)
 # Using sem() function from lavaan packages
 # Instrumental Variables Approach
 ivMod <-
-
-"
+  
+  "
 Y ~ intY*1 + b*M
 M ~ intM*1 + a*X
 
@@ -134,6 +134,8 @@ ab := a*b
 
 fit <- sem(ivMod, fixed.x = FALSE, data=ds_L)
 summary(fit)
+
+View(tibble::as_tibble(ds_test))
 
 
 # ---- lmer-guess ------------------------------------------------------------------------------------------------------------------------
@@ -200,7 +202,68 @@ mod.att_L <- wfe(Y ~ M + X, data = ds_L, treat = "X", unit.index = "ID", method 
 summary(mod.att_L)
 
 
-# ----
+# ---- late-growth-curve-eventually-i-hope ------------------------------------------------------------------------------------------------------------------------
+ds_lgc_wide <-
+  ds_L %>% 
+  dplyr::mutate(
+    ID = as.factor(ID),
+    time = rep(1:5, 1000)
+  ) %>% 
+  reshape(ds_test, idvar = "ID", timevar = "time", direction = "wide") %>% 
+  dplyr::rename(
+    Y_1 =  "Y.1",
+    M_1 =  "M.1",
+    X_1 =  "X.1", 
+    Z_1 =  "Z.1", 
+    Y_2 =  "Y.2", 
+    M_2 =  "M.2", 
+    X_2 =  "X.2", 
+    Z_2 =  "Z.2", 
+    Y_3 =  "Y.3",
+    M_3 =  "M.3", 
+    X_3 =  "X.3", 
+    Z_3 =  "Z.3", 
+    Y_4 =  "Y.4", 
+    M_4 =  "M.4", 
+    X_4 =  "X.4", 
+    Z_4 =  "Z.4", 
+    Y_5 =  "Y.5", 
+    M_5 =  "M.5", 
+    X_5 =  "X.5", 
+    Z_5 =  "Z.5"
+  )
+
+
+
+
+model_test <-
+  "
+  # Intercept and slope with fixed coefficients
+  i =~ 1*Y_1 + 1*Y_2 + 1*Y_3 + 1*Y_4 + 1*Y_5
+  s =~ 0*Y_1 + 1*Y_2 + 2*Y_3 + 3*Y_4 + 4*Y_5
+
+  # Regressions
+  i ~ M_1 + M_2 + M_3 + M_4 + M_5
+  s ~ M_1 + M_2 + M_3 + M_4 + M_5
+  
+  M_1 ~ X_1
+  M_2 ~ X_2
+  M_3 ~ X_3
+  M_4 ~ X_4
+  M_5 ~ X_5
+  
+  # time-varying covariates
+  Y_1 ~ M_1
+  Y_2 ~ M_2
+  Y_3 ~ M_3
+  Y_4 ~ M_4
+  Y_5 ~ M_5
+
+  "
+lgc_attempt <- sem(model_test, data=ds_lgc_wide, cluster = "ID")
+summary(lgc_attempt)
+
+# ---- 
 
 ### NOTE: this example illustrates the use of wfe function with randomly
 ### generated panel data with arbitrary number of units and time.
@@ -246,77 +309,87 @@ mod.att <- wfe(y~ tr+x1+x2, data = Data.str, treat = "tr",
 summary(mod.att)
 
 # sem approach: Latent Growth Curve Modeling
-# dsw <- 
-#   ds_L %>%
-#   dplyr::filter(t == 1) %>%
-#   dplyr::rename(
-#     Y1 = Y,
-#     M1 = M,
-#     X1 = X
-#   ) %>%
-#   dplyr::left_join(
-#     ds_L %>% dplyr::filter(t == 2) %>%
-#       dplyr::select(- "Z" ) %>%
-#       dplyr::rename(
-#         Y2 = Y,
-#         M2 = M,
-#         X2 = X
-#       ), by = "ID"
-#   ) %>%
-#   dplyr::left_join(
-#     ds_L %>% dplyr::filter(t == 3) %>%
-#       dplyr::select(- "Z" ) %>%
-#       dplyr::rename(
-#         Y3 = Y,
-#         M3 = M,
-#         X3 = X
-#       ), by = "ID"
-#   ) %>%
-#   dplyr::left_join(
-#     ds_L %>% dplyr::filter(t == 4) %>%
-#       dplyr::select(- "Z" ) %>%
-#       dplyr::rename(
-#         Y4 = Y,
-#         M4 = M,
-#         X4 = X
-#       ), by = "ID"
-#   ) %>%
-#   dplyr::left_join(
-#     ds_L %>% dplyr::filter(t == 5) %>%
-#       dplyr::select(- "Z" ) %>%
-#       dplyr::rename(
-#         Y5 = Y,
-#         M5 = M,
-#         X5 = X
-#       ), by = "ID"
-#   ) %>%
-#   dplyr::select(
-#     ID, Z, Y1, Y2, Y3, Y4, Y5, X1, X2, X3, X4, X5, M1, M2, M3, M4, M5
-#   )
+dsw <- 
+  ds_L %>%
+  dplyr::filter(ID == 1) %>%
+  dplyr::rename(
+    Y1 = Y,
+    M1 = M,
+    X1 = X
+  ) %>% 
+  dplyr::left_join(
+    ds_L %>% dplyr::rename(
+      
+    )
+    
+    , by = c("ID")
+  )
+
+dsw
+%>%
+  dplyr::left_join(
+    ds_L %>% dplyr::filter(ID == 2) %>%
+      dplyr::select(- "Z" ) %>%
+      dplyr::rename(
+        Y2 = Y,
+        M2 = M,
+        X2 = X
+      ), by = "ID"
+  ) %>%
+  dplyr::left_join(
+    ds_L %>% dplyr::filter(ID == 3) %>%
+      dplyr::select(- "Z" ) %>%
+      dplyr::rename(
+        Y3 = Y,
+        M3 = M,
+        X3 = X
+      ), by = "ID"
+  ) %>%
+  dplyr::left_join(
+    ds_L %>% dplyr::filter(ID == 4) %>%
+      dplyr::select(- "Z" ) %>%
+      dplyr::rename(
+        Y4 = Y,
+        M4 = M,
+        X4 = X
+      ), by = "ID"
+  ) %>%
+  dplyr::left_join(
+    ds_L %>% dplyr::filter(ID == 5) %>%
+      dplyr::select(- "Z" ) %>%
+      dplyr::rename(
+        Y5 = Y,
+        M5 = M,
+        X5 = X
+      ), by = "ID"
+  ) %>%
+  dplyr::select(
+    ID, Z, Y1, Y2, Y3, Y4, Y5, X1, X2, X3, X4, X5, M1, M2, M3, M4, M5
+  )
+
+head(dsw)
+
+model <- '
+# Intercept and slope with fixed coefficients
+ i =~ Y1 + Y2 + Y3 + Y4 + Y5
+ s =~ Y1 + Y2 + Y3 + Y4 + Y5
+
 # 
-# head(dsw)
-# 
-# model <- '
-# # Intercept and slope with fixed coefficients
-#   i =~ Y1 + Y2 + Y3 + Y4 + Y5
-#   s =~ Y1 + Y2 + Y3 + Y4 + Y5
-# 
-# # 
-#   M1 ~ Z + X1
-#   M2 ~ Z + X2
-#   M3 ~ Z + X3
-#   M4 ~ Z + X4
-#   M5 ~ Z + X5
-# 
-#   Y1 ~ Z + M1
-#   Y2 ~ Z + M2
-#   Y3 ~ Z + M3
-#   Y4 ~ Z + M4
-#   Y5 ~ Z + M5
-# '
-# 
-# fit <- growth(model, data = dsw)
-# summary(fit)
+ M1 ~ Z + X1
+ M2 ~ Z + X2
+ M3 ~ Z + X3
+ M4 ~ Z + X4
+ M5 ~ Z + X5
+
+ Y1 ~ Z + M1
+ Y2 ~ Z + M2
+ Y3 ~ Z + M3
+ Y4 ~ Z + M4
+ Y5 ~ Z + M5
+'
+
+fit <- growth(model, data = dsw)
+summary(fit)
 
 
 # ---- zeligverse-approach ------------------------------------------------------------------------------------------------------------------------
@@ -436,11 +509,6 @@ fit2sls <- systemfit( system, "2SLS", inst = inst, data = Kmenta )
 print( fit2sls )
 
 
-
-
-
-
-
 # Importing Bodo Winter example into Zelig to get ATT ( I hope, eventually)
 
 # replicating (hopefully) in Zelig
@@ -473,9 +541,9 @@ summary(ht)
 View(head(Wages, 40))
 # deprecated way with pht() for HT
 ht <- pht(lwage ~ wks + south + smsa + married + exp + I(exp^2) +
- bluecol + ind + union + sex + black + ed |
- sex + black + bluecol + south + smsa + ind,
- data = Wages, model = "ht", index = 595)
+            bluecol + ind + union + sex + black + ed |
+            sex + black + bluecol + south + smsa + ind,
+          data = Wages, model = "ht", index = 595)
 summary(ht)
 
 # systemfit
